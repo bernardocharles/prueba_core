@@ -1,0 +1,66 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id          String       @id @default(uuid())
+  email       String       @unique
+  name        String
+  taxProfiles TaxProfile[]
+  tickets     Ticket[]
+  createdAt   DateTime     @default(now())
+}
+
+model TaxProfile {
+  id            String  @id @default(uuid())
+  userId        String
+  user          User    @relation(fields: [userId], references: [id])
+  rfc           String  @unique
+  razonSocial   String
+  codigoPostal  String
+  regimenFiscal String // Clave SAT (ej. 601, 626)
+  usoCFDI       String  @default("G03")
+  csfPdfUrl     String?
+  isDefault     Boolean @default(true)
+}
+
+enum TicketStatus {
+  PENDING
+  PROCESSING
+  WAITING_VENDOR_RESPONSE
+  COMPLETED
+  FAILED
+}
+
+enum ChannelType {
+  DIRECT_API
+  WEB_SCRAPE
+  WHATSAPP
+  EMAIL
+}
+
+model Ticket {
+  id            String       @id @default(uuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id])
+  imageUrl      String
+  storeName     String?
+  vendorRfc     String?
+  ticketDate    DateTime?
+  totalAmount   Float?
+  ticketFolio   String?
+  billingCode   String?
+  channelUsed   ChannelType?
+  contactInfo   Json? // { phone, email, portalUrl }
+  status        TicketStatus @default(PENDING)
+  failureReason String?
+  invoiceXmlUrl String?
+  invoicePdfUrl String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}

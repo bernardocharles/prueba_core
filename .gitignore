@@ -1,0 +1,23 @@
+# secretos — NUNCA versionar
+.env
+.env*.local
+
+# dependencias / build
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# misc
+.DS_Store
+*.log
+coverage/
+
+# tickets reales de prueba: se versiona solo el README de la carpeta
+public/samples/*
+!public/samples/README.md
+
+# servicios y almacenamiento local de desarrollo
+.data/
