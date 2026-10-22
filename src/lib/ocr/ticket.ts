@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { extractStructured, imageMediaType } from "../ai";
+import { demoTicketData, isDemoMode } from "../demo";
 
 export const CANALES = ["WEB_SCRAPE", "WHATSAPP", "EMAIL", "PAC_DIRECTO"] as const;
 
@@ -42,6 +43,7 @@ Si la imagen no es un ticket de compra, es_ticket=false.`;
 export class TicketValidationError extends Error {}
 
 export async function extractTicketData(image: Buffer, mimeType: string): Promise<TicketData> {
+  if (isDemoMode()) return demoTicketData();
   const raw = await extractStructured({
     schema: TicketExtractionSchema,
     system: SYSTEM,

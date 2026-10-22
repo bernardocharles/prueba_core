@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { extractStructured } from "../ai";
+import { demoCsfData, isDemoMode } from "../demo";
 import { cleanRazonSocial } from "../sat-cleaner";
 import { REGIMENES_FISCALES, RFC_REGEX } from "../sat-catalogs";
 
@@ -34,6 +35,7 @@ export type CsfData = {
 export class CsfValidationError extends Error {}
 
 export async function extractCsfData(pdf: Buffer): Promise<CsfData> {
+  if (isDemoMode()) return demoCsfData();
   const raw = await extractStructured({
     schema: CsfExtractionSchema,
     system: SYSTEM,

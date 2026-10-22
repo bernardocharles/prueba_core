@@ -67,6 +67,12 @@ hace falta instalar PostgreSQL ni Docker. En desarrollo `STORAGE_DRIVER=local` g
 `.data/storage`; en producción usa `STORAGE_DRIVER=s3` con un bucket S3-compatible (Supabase Storage, R2 o S3).
 `rm -rf .data` reinicia todo el estado local.
 
+### Modo demo (sin API keys)
+
+Con `DEMO_MODE="true"` en `.env` se puede recorrer toda la app: el OCR devuelve datos de ejemplo
+(comercios ficticios) y los agentes, en lugar de enviar, simulan que el comercio responde a los pocos
+segundos con un CFDI de prueba. La interfaz muestra una etiqueta **DEMO**. Ponlo en `"false"` para usar Claude, Resend y Twilio reales.
+
 ### Configuración de canales
 
 - **Email**: `RESEND_*` para enviar; el `replyTo` es `INBOUND_EMAIL_ADDRESS` con plus-addressing

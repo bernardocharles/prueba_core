@@ -1,17 +1,21 @@
 import * as React from "react";
+import { ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Select nativo con estilo shadcn: funciona bien con react-hook-form `register` y en móvil.
+// Select nativo: en iPhone/Android abre el picker del sistema, compatible con react-hook-form `register`.
 const NativeSelect = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>(
   ({ className, ...props }, ref) => (
-    <select
-      ref={ref}
-      className={cn(
-        "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
-        className,
-      )}
-      {...props}
-    />
+    <span className="relative flex min-w-0 flex-1 items-center justify-end gap-1 text-muted-foreground">
+      <select
+        ref={ref}
+        className={cn(
+          "w-full min-w-0 appearance-none truncate bg-transparent text-right text-body text-muted-foreground outline-none [direction:rtl] disabled:opacity-50",
+          className,
+        )}
+        {...props}
+      />
+      <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-60" />
+    </span>
   ),
 );
 NativeSelect.displayName = "NativeSelect";

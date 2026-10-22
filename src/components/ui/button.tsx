@@ -3,18 +3,25 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
+// Botones al estilo iOS: filled, tinted (fondo translúcido del tinte) y plain (sólo texto).
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
+  "press inline-flex select-none items-center justify-center gap-2 whitespace-nowrap font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
+        default: "bg-primary text-primary-foreground",
+        tinted: "bg-primary/[0.12] text-primary dark:bg-primary/20",
+        destructive: "bg-destructive/[0.12] text-destructive dark:bg-destructive/20",
+        gray: "bg-muted text-foreground",
+        plain: "text-primary",
+        outline: "border border-border bg-card text-foreground",
       },
-      size: { default: "h-10 px-4 py-2", sm: "h-9 rounded-md px-3", lg: "h-11 rounded-md px-8", icon: "h-10 w-10" },
+      size: {
+        default: "h-11 rounded-xl px-5 text-body [&_svg]:size-[18px]",
+        lg: "h-[52px] w-full rounded-[14px] px-6 text-headline [&_svg]:size-5",
+        sm: "h-8 rounded-full px-3.5 text-subhead [&_svg]:size-4",
+        icon: "h-11 w-11 rounded-full [&_svg]:size-5",
+      },
     },
     defaultVariants: { variant: "default", size: "default" },
   },

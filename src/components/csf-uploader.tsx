@@ -1,26 +1,27 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, FileText, Loader2, UploadCloud, XCircle } from "lucide-react";
+import { Check, FileUp, Loader2, XCircle } from "lucide-react";
 import { parseCsf } from "@/app/actions/parse-csf";
 import { saveTaxProfile } from "@/app/actions/tax-profile";
 import type { CsfData } from "@/lib/ocr/csf";
 import { REGIMENES_FISCALES, USOS_CFDI } from "@/lib/sat-catalogs";
 import { taxProfileSchema, type TaxProfileInput } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
+import { FieldRow, Notice, Section } from "@/components/ios";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/select";
-import { FormField } from "@/components/form-field";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 
 type Phase = { name: "idle" } | { name: "parsing"; fileName: string } | { name: "review"; csf: CsfData } | { name: "saved" };
 
-export function CsfUploader({ onSaved }: { onSaved?: () => void }) {
+export function CsfUploader({ hasProfile }: { hasProfile: boolean }) {
+  const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [phase, setPhase] = useState<Phase>({ name: "idle" });
   const [error, setError] = useState<string | null>(null);
@@ -61,145 +62,133 @@ export function CsfUploader({ onSaved }: { onSaved?: () => void }) {
       const res = await saveTaxProfile(values);
       if (!res.ok) return setError(res.error);
       setPhase({ name: "saved" });
-      onSaved?.();
+      router.refresh();
     }),
   );
 
   const errors = form.formState.errors;
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Constancia de Situación Fiscal</CardTitle>
-        <CardDescription>
-          Sube el PDF de tu CSF del SAT. Extraemos RFC, nombre, CP y régimen fiscal para tus facturas CFDI 4.0.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {(phase.name === "idle" || phase.name === "parsing") && (
-          <button
-            type="button"
-            disabled={phase.name === "parsing"}
-            onClick={() => inputRef.current?.click()}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragging(true);
-            }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragging(false);
-              void handleFile(e.dataTransfer.files[0]);
-            }}
-            className={cn(
-              "flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 text-center transition-colors",
-              dragging ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/60",
-            )}
-          >
-            {phase.name === "parsing" ? (
-              <>
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="text-sm font-medium">Leyendo {phase.fileName}…</span>
-                <span className="text-xs text-muted-foreground">Esto toma unos segundos</span>
-              </>
-            ) : (
-              <>
-                <UploadCloud className="h-8 w-8 text-muted-foreground" />
-                <span className="text-sm font-medium">Arrastra tu CSF aquí o haz clic para seleccionarla</span>
-                <span className="text-xs text-muted-foreground">PDF, máximo 10 MB</span>
-              </>
-            )}
-          </button>
-        )}
-        <input
-          ref={inputRef}
-          type="file"
-          accept="application/pdf"
-          className="hidden"
-          onChange={(e) => {
-            void handleFile(e.target.files?.[0]);
-            e.target.value = "";
-          }}
-        />
+  if (phase.name === "review") {
+    const { csf } = phase;
+    const regimenes = csf.regimenesDisponibles.length > 1 ? csf.regimenesDisponibles.map((r) => r.clave) : Object.keys(REGIMENES_FISCALES);
+    return (
+      <form onSubmit={onSubmit} className="space-y-7">
+        <Section
+          header="Datos fiscales detectados"
+          footer={
+            csf.razonSocialOriginal !== csf.razonSocial
+              ? `En tu CSF aparece “${csf.razonSocialOriginal}”. CFDI 4.0 pide el nombre sin el régimen capital.`
+              : "Revisa que coincidan exactamente con tu constancia."
+          }
+        >
+          <FieldRow label="RFC" error={errors.rfc?.message}>
+            <Input {...form.register("rfc")} className="font-mono uppercase" autoCapitalize="characters" />
+          </FieldRow>
+          <FieldRow label="Nombre" error={errors.razonSocial?.message}>
+            <Input {...form.register("razonSocial")} className="uppercase" autoCapitalize="characters" />
+          </FieldRow>
+          <FieldRow label="C.P. fiscal" error={errors.codigoPostal?.message}>
+            <Input {...form.register("codigoPostal")} inputMode="numeric" maxLength={5} />
+          </FieldRow>
+        </Section>
 
-        {phase.name === "review" && (
-          <form onSubmit={onSubmit} className="space-y-4">
-            <div className="flex items-center gap-2 rounded-md bg-muted p-3 text-sm">
-              <FileText className="h-4 w-4 shrink-0" />
-              <span>Revisa los datos extraídos antes de guardarlos.</span>
-            </div>
-
-            <FormField label="RFC" error={errors.rfc?.message}>
-              <Input {...form.register("rfc")} className="font-mono uppercase" />
-            </FormField>
-
-            <FormField
-              label="Nombre / Razón Social (CFDI 4.0)"
-              error={errors.razonSocial?.message}
-              hint={
-                phase.csf.razonSocialOriginal !== phase.csf.razonSocial
-                  ? `En la CSF: "${phase.csf.razonSocialOriginal}". Se omite el régimen capital, como exige CFDI 4.0.`
-                  : undefined
-              }
-            >
-              <Input {...form.register("razonSocial")} className="uppercase" />
-            </FormField>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField label="Código Postal fiscal" error={errors.codigoPostal?.message}>
-                <Input {...form.register("codigoPostal")} inputMode="numeric" maxLength={5} />
-              </FormField>
-              <FormField label="Régimen Fiscal" error={errors.regimenFiscal?.message}>
-                <NativeSelect {...form.register("regimenFiscal")}>
-                  {(phase.csf.regimenesDisponibles.length > 1
-                    ? phase.csf.regimenesDisponibles.map((r) => r.clave)
-                    : Object.keys(REGIMENES_FISCALES)
-                  ).map((clave) => (
-                    <option key={clave} value={clave}>
-                      {clave} - {REGIMENES_FISCALES[clave]}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </FormField>
-            </div>
-
-            <FormField label="Uso de CFDI predeterminado" error={errors.usoCFDI?.message}>
-              <NativeSelect {...form.register("usoCFDI")}>
-                {Object.entries(USOS_CFDI).map(([clave, desc]) => (
-                  <option key={clave} value={clave}>
-                    {clave} - {desc}
-                  </option>
-                ))}
-              </NativeSelect>
-            </FormField>
-
-            <div className="flex gap-2">
-              <Button type="submit" disabled={saving}>
-                {saving && <Loader2 className="animate-spin" />}
-                Guardar perfil fiscal
-              </Button>
-              <Button type="button" variant="ghost" onClick={() => setPhase({ name: "idle" })} disabled={saving}>
-                Subir otra
-              </Button>
-            </div>
-          </form>
-        )}
-
-        {phase.name === "saved" && (
-          <div className="flex items-center gap-2 rounded-md bg-primary/10 p-3 text-sm text-primary">
-            <CheckCircle2 className="h-4 w-4" />
-            Perfil fiscal guardado. Ya puedes facturar tus tickets.
-          </div>
-        )}
+        <Section header="Para tus facturas">
+          <FieldRow label="Régimen" error={errors.regimenFiscal?.message}>
+            <NativeSelect {...form.register("regimenFiscal")}>
+              {regimenes.map((clave) => (
+                <option key={clave} value={clave}>
+                  {clave} · {REGIMENES_FISCALES[clave]}
+                </option>
+              ))}
+            </NativeSelect>
+          </FieldRow>
+          <FieldRow label="Uso de CFDI" error={errors.usoCFDI?.message}>
+            <NativeSelect {...form.register("usoCFDI")}>
+              {Object.entries(USOS_CFDI).map(([clave, desc]) => (
+                <option key={clave} value={clave}>
+                  {clave} · {desc}
+                </option>
+              ))}
+            </NativeSelect>
+          </FieldRow>
+        </Section>
 
         {error && (
-          <div role="alert" className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-            <XCircle className="h-4 w-4 shrink-0" />
+          <Notice tone="error" icon={XCircle}>
             {error}
-          </div>
+          </Notice>
         )}
-      </CardContent>
-    </Card>
+
+        <div className="flex flex-col gap-3">
+          <Button type="submit" size="lg" disabled={saving}>
+            {saving && <Loader2 className="animate-spin" />}
+            Guardar perfil fiscal
+          </Button>
+          <Button type="button" size="lg" variant="gray" onClick={() => setPhase({ name: "idle" })} disabled={saving}>
+            Cancelar
+          </Button>
+        </div>
+      </form>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {phase.name === "saved" && (
+        <Notice tone="success" icon={Check}>
+          Perfil fiscal guardado. Ya puedes facturar tus tickets.
+        </Notice>
+      )}
+      <button
+        type="button"
+        disabled={phase.name === "parsing"}
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          void handleFile(e.dataTransfer.files[0]);
+        }}
+        className={cn(
+          "press flex w-full flex-col items-center justify-center gap-3 rounded-[var(--radius)] border-2 border-dashed bg-card px-6 py-9 text-center transition-colors",
+          dragging ? "border-primary bg-primary/5" : "border-transparent",
+        )}
+      >
+        {phase.name === "parsing" ? (
+          <>
+            <Loader2 className="h-9 w-9 animate-spin text-primary" />
+            <span className="text-headline">Leyendo constancia…</span>
+            <span className="max-w-[16rem] truncate text-subhead text-muted-foreground">{phase.fileName}</span>
+          </>
+        ) : (
+          <>
+            <span className="flex h-14 w-14 items-center justify-center rounded-[16px] bg-primary/[0.12] text-primary">
+              <FileUp className="h-7 w-7" />
+            </span>
+            <span className="text-headline">{hasProfile ? "Actualizar Constancia" : "Subir Constancia de Situación Fiscal"}</span>
+            <span className="text-subhead text-muted-foreground">PDF descargado del SAT · máx. 10 MB</span>
+          </>
+        )}
+      </button>
+      {error && (
+        <Notice tone="error" icon={XCircle}>
+          {error}
+        </Notice>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="application/pdf"
+        className="hidden"
+        onChange={(e) => {
+          void handleFile(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+      />
+    </div>
   );
 }
-

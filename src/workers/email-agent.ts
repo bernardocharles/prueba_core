@@ -3,11 +3,13 @@ import { ImapFlow } from "imapflow";
 import { simpleParser, type ParsedMail } from "mailparser";
 import { Resend } from "resend";
 import { db } from "@/lib/db";
+import { isDemoMode } from "@/lib/demo";
 import { attachInvoiceFiles } from "@/lib/invoice-files";
 import { buildInvoiceRequestText, ticketTag } from "@/lib/invoice-request";
 import { QUEUES, redisConnection, type TicketJob } from "@/lib/queue";
 import type { ContactInfo } from "@/lib/routing-engine";
 import { getObject } from "@/lib/storage";
+import { simulateVendorReply } from "./demo-reply";
 import { UnrecoverableAgentError, handleAgentFailure, loadTicketContext } from "./shared";
 
 // ─── Outbound: solicitud de factura vía Resend ─────────────────────────
@@ -30,6 +32,7 @@ async function sendInvoiceRequest(job: Job<TicketJob>) {
   const ctx = await loadTicketContext(job.data.ticketId);
   if (!ctx) return;
   const { ticket, profile } = ctx;
+  if (isDemoMode()) return simulateVendorReply(ticket, profile);
   const to = (ticket.contactInfo as ContactInfo | null)?.email;
   if (!to) throw new UnrecoverableAgentError("El ticket no tiene correo de facturación");
 

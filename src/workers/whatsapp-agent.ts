@@ -1,10 +1,12 @@
 import { Worker, type Job } from "bullmq";
 import twilio from "twilio";
 import { db } from "@/lib/db";
+import { isDemoMode } from "@/lib/demo";
 import { buildInvoiceRequestText } from "@/lib/invoice-request";
 import { QUEUES, redisConnection, type TicketJob } from "@/lib/queue";
 import type { ContactInfo } from "@/lib/routing-engine";
 import { signedUrl } from "@/lib/storage";
+import { simulateVendorReply } from "./demo-reply";
 import { UnrecoverableAgentError, handleAgentFailure, loadTicketContext } from "./shared";
 
 let twilioClient: ReturnType<typeof twilio> | undefined;
@@ -24,6 +26,7 @@ async function sendInvoiceRequest(job: Job<TicketJob>) {
   const ctx = await loadTicketContext(job.data.ticketId);
   if (!ctx) return;
   const { ticket, profile } = ctx;
+  if (isDemoMode()) return simulateVendorReply(ticket, profile);
   const phone = (ticket.contactInfo as ContactInfo | null)?.phone;
   if (!phone) throw new UnrecoverableAgentError("El ticket no tiene WhatsApp de facturación");
 

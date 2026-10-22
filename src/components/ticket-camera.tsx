@@ -4,18 +4,16 @@ import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertTriangle, Camera, CheckCircle2, ImageUp, Loader2, XCircle } from "lucide-react";
+import { AlertTriangle, Camera, Check, ImageIcon, Loader2, ScanLine, Sun, XCircle } from "lucide-react";
 import type { ChannelType } from "@prisma/client";
 import { parseTicket, type ParseTicketResult } from "@/app/actions/parse-ticket";
 import { requestInvoice } from "@/app/actions/request-invoice";
 import { ticketCorrectionsSchema, type TicketCorrections, type TicketCorrectionsOutput } from "@/lib/schemas";
 import { formatMXN } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+import { CHANNEL_META, ChannelTile } from "@/components/channel-badge";
+import { FieldRow, LargeTitle, Notice, Row, Section } from "@/components/ios";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ChannelBadge, CHANNEL_META } from "@/components/channel-badge";
-import { FormField } from "@/components/form-field";
 
 const MAX_SIDE = 2000;
 
@@ -47,7 +45,7 @@ export function TicketCamera() {
   const [preview, setPreview] = useState<string | null>(null);
   const [parsed, setParsed] = useState<Parsed | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [sentVia, setSentVia] = useState<ChannelType | null>(null);
+  const [sentVia, setSentVia] = useState<{ channel: ChannelType; ticketId: string } | null>(null);
   const [reading, startReading] = useTransition();
   const [sending, startSending] = useTransition();
 
@@ -91,156 +89,223 @@ export function TicketCamera() {
       setError(null);
       const res = await requestInvoice(parsed.ticketId, values);
       if (!res.ok) return setError(res.error);
-      setSentVia(res.channel);
+      setSentVia({ channel: res.channel, ticketId: parsed.ticketId });
     }),
   );
 
   const errors = form.formState.errors;
-  const channel = parsed?.routing.channel;
+  const channel = parsed?.routing.channel ?? null;
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Nuevo ticket</CardTitle>
-        <CardDescription>Toma una foto nítida del ticket completo, con buena luz y sin reflejos.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {!preview && (
-          <div className="grid gap-3 sm:grid-cols-2">
+  const pickers = (
+    <>
+      {/* capture="environment" abre directo la cámara trasera en iOS/Android */}
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          handleFile(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+      />
+      <input
+        ref={galleryRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/heic"
+        className="hidden"
+        onChange={(e) => {
+          handleFile(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+      />
+    </>
+  );
+
+  // ── Confirmación ──────────────────────────────────────────────
+  if (sentVia) {
+    return (
+      <div className="flex min-h-[70dvh] flex-col items-center justify-center gap-6 text-center">
+        <span className="flex h-20 w-20 animate-in zoom-in-50 items-center justify-center rounded-full bg-success text-white duration-300">
+          <Check className="h-10 w-10" strokeWidth={3} />
+        </span>
+        <div className="space-y-1">
+          <h1 className="text-title-2">Solicitud enviada</h1>
+          <p className="mx-auto max-w-xs text-subhead text-muted-foreground">
+            Pedimos tu factura por {CHANNEL_META[sentVia.channel].label}. Te avisamos en cuanto el comercio responda.
+          </p>
+        </div>
+        <div className="flex w-full max-w-sm flex-col gap-3">
+          <Button asChild size="lg">
+            <Link href={`/tickets/${sentVia.ticketId}`}>Ver estado</Link>
+          </Button>
+          <Button size="lg" variant="tinted" onClick={reset}>
+            Escanear otro ticket
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Inicio ────────────────────────────────────────────────────
+  if (!preview) {
+    return (
+      <div className="space-y-7">
+        <LargeTitle title="Escanear" subtitle="Funciona con cualquier ticket de México" />
+        <div className="flex flex-col items-center gap-6 rounded-[var(--radius)] bg-card px-6 py-10 text-center">
+          <span className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-gradient-to-b from-primary to-indigo text-white shadow-lg shadow-primary/25">
+            <ScanLine className="h-12 w-12" strokeWidth={1.8} />
+          </span>
+          <div className="space-y-1">
+            <p className="text-headline">Toma una foto del ticket completo</p>
+            <p className="mx-auto max-w-xs text-subhead text-muted-foreground">
+              Leemos la tienda, el total, el folio y cómo facturar. Tú sólo confirmas.
+            </p>
+          </div>
+          <div className="flex w-full max-w-sm flex-col gap-3">
             <Button size="lg" onClick={() => cameraRef.current?.click()}>
               <Camera /> Tomar foto
             </Button>
-            <Button size="lg" variant="outline" onClick={() => galleryRef.current?.click()}>
-              <ImageUp /> Subir imagen
+            <Button size="lg" variant="tinted" onClick={() => galleryRef.current?.click()}>
+              <ImageIcon /> Elegir de Fotos
             </Button>
           </div>
-        )}
-        {/* capture="environment" abre directo la cámara trasera en iOS/Android */}
-        <input
-          ref={cameraRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(e) => {
-            handleFile(e.target.files?.[0]);
-            e.target.value = "";
-          }}
-        />
-        <input
-          ref={galleryRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/heic"
-          className="hidden"
-          onChange={(e) => {
-            handleFile(e.target.files?.[0]);
-            e.target.value = "";
-          }}
-        />
-
-        {preview && (
-          <div className="grid gap-6 md:grid-cols-[minmax(0,240px)_1fr]">
-            <div className="relative overflow-hidden rounded-md border bg-muted">
-              {/* eslint-disable-next-line @next/next/no-img-element -- blob: local, next/image no aplica */}
-              <img src={preview} alt="Ticket" className="max-h-96 w-full object-contain" />
-              {reading && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/80 text-sm">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  Leyendo ticket…
-                </div>
-              )}
-            </div>
-
-            {parsed && !sentVia && (
-              <form onSubmit={onSubmit} className="space-y-4">
-                <div>
-                  <p className="text-lg font-semibold">{parsed.data.tienda_nombre ?? "Comercio no identificado"}</p>
-                  <p className="text-sm text-muted-foreground">
-                    RFC emisor: <span className="font-mono">{parsed.data.rfc_emisor ?? "—"}</span> · Total detectado:{" "}
-                    {formatMXN(parsed.data.monto_total)}
-                  </p>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <FormField label="Folio / No. de ticket" error={errors.ticketFolio?.message}>
-                    <Input {...form.register("ticketFolio")} className="font-mono" />
-                  </FormField>
-                  <FormField label="Código de facturación" error={errors.billingCode?.message}>
-                    <Input {...form.register("billingCode")} className="font-mono" />
-                  </FormField>
-                  <FormField label="Fecha de compra" error={errors.ticketDate?.message}>
-                    <Input type="date" {...form.register("ticketDate")} />
-                  </FormField>
-                  <FormField label="Total (MXN)" error={errors.totalAmount?.message}>
-                    <Input type="number" step="0.01" inputMode="decimal" {...form.register("totalAmount")} />
-                  </FormField>
-                  <FormField label="WhatsApp de facturación" error={errors.whatsapp?.message}>
-                    <Input type="tel" {...form.register("whatsapp")} placeholder="+52…" />
-                  </FormField>
-                  <FormField label="Correo de facturación" error={errors.email?.message}>
-                    <Input type="email" {...form.register("email")} />
-                  </FormField>
-                </div>
-
-                <div className="space-y-2 rounded-md bg-muted p-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">Canal sugerido:</span>
-                    {channel ? <ChannelBadge channel={channel} /> : <Badge variant="warning">Manual</Badge>}
-                  </div>
-                  {parsed.routing.warnings.map((w) => (
-                    <p key={w} className="flex gap-2 text-amber-800 dark:text-amber-300">
-                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                      {w}
-                    </p>
-                  ))}
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <Button type="submit" disabled={sending}>
-                    {sending && <Loader2 className="animate-spin" />}
-                    Solicitar factura
-                  </Button>
-                  <Button type="button" variant="ghost" onClick={reset} disabled={sending}>
-                    Otro ticket
-                  </Button>
-                </div>
-              </form>
-            )}
-
-            {sentVia && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 rounded-md bg-primary/10 p-3 text-sm text-primary">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Solicitud enviada por {CHANNEL_META[sentVia].label}. Te avisaremos cuando llegue la factura.
-                </div>
-                <div className="flex gap-2">
-                  <Button asChild>
-                    <Link href="/dashboard">Ver mis facturas</Link>
-                  </Button>
-                  <Button variant="outline" onClick={reset}>
-                    Otro ticket
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
+        </div>
+        <Section header="Consejos" footer="Los tickets térmicos se borran con el tiempo: escanéalos el mismo día.">
+          <Row leading={<Tip icon={Sun} />} title="Buena luz, sin reflejos" />
+          <Row leading={<Tip icon={ScanLine} />} title="Que se vea el ticket completo" />
+        </Section>
         {error && (
-          <div role="alert" className="flex items-center justify-between gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-            <span className="flex items-center gap-2">
-              <XCircle className="h-4 w-4 shrink-0" />
-              {error}
-            </span>
-            {!parsed && (
-              <Button size="sm" variant="outline" onClick={reset}>
-                Reintentar
-              </Button>
-            )}
-          </div>
+          <Notice tone="error" icon={XCircle}>
+            {error}
+          </Notice>
         )}
-      </CardContent>
-    </Card>
+        {pickers}
+      </div>
+    );
+  }
+
+  // ── Lectura y revisión ────────────────────────────────────────
+  return (
+    <form onSubmit={onSubmit} className="space-y-7 pt-4 md:pt-8">
+      <div className="flex items-center gap-4 px-1">
+        <div className="relative h-24 w-[72px] shrink-0 overflow-hidden rounded-xl bg-muted shadow-sm">
+          {/* eslint-disable-next-line @next/next/no-img-element -- blob: local */}
+          <img src={preview} alt="Ticket" className="h-full w-full object-cover" />
+          {reading && <div className="absolute inset-x-0 top-0 h-1/3 animate-[scan_1.4s_ease-in-out_infinite] bg-gradient-to-b from-primary/0 via-primary/40 to-primary/0" />}
+        </div>
+        <div className="min-w-0">
+          {reading ? (
+            <>
+              <p className="text-headline">Leyendo ticket…</p>
+              <p className="text-subhead text-muted-foreground">Esto toma unos segundos</p>
+            </>
+          ) : parsed ? (
+            <>
+              <p className="truncate text-title-2">{parsed.data.tienda_nombre ?? "Comercio sin identificar"}</p>
+              <p className="text-subhead text-muted-foreground">
+                {formatMXN(parsed.data.monto_total)}
+                {parsed.data.rfc_emisor && <span className="font-mono"> · {parsed.data.rfc_emisor}</span>}
+              </p>
+            </>
+          ) : (
+            <p className="text-headline">No se pudo leer</p>
+          )}
+        </div>
+      </div>
+
+      {reading && <ReviewSkeleton />}
+
+      {parsed && (
+        <>
+          <Section header="Datos del ticket" footer="Revisa que coincidan con el ticket; puedes corregirlos.">
+            <FieldRow label="Folio" error={errors.ticketFolio?.message}>
+              <Input {...form.register("ticketFolio")} className="font-mono" placeholder="Opcional" />
+            </FieldRow>
+            <FieldRow label="Código" error={errors.billingCode?.message}>
+              <Input {...form.register("billingCode")} className="font-mono" placeholder="Opcional" />
+            </FieldRow>
+            <FieldRow label="Fecha" error={errors.ticketDate?.message}>
+              <Input type="date" {...form.register("ticketDate")} />
+            </FieldRow>
+            <FieldRow label="Total" error={errors.totalAmount?.message}>
+              <Input type="number" step="0.01" inputMode="decimal" {...form.register("totalAmount")} placeholder="0.00" />
+            </FieldRow>
+          </Section>
+
+          <Section header="Contacto del comercio">
+            <FieldRow label="WhatsApp" error={errors.whatsapp?.message}>
+              <Input type="tel" {...form.register("whatsapp")} placeholder="+52…" />
+            </FieldRow>
+            <FieldRow label="Correo" error={errors.email?.message}>
+              <Input type="email" autoCapitalize="none" {...form.register("email")} placeholder="facturas@…" />
+            </FieldRow>
+          </Section>
+
+          <Section
+            header="Enviaremos la solicitud por"
+            footer={parsed.routing.warnings.length ? undefined : "Incluye la foto del ticket y tu Constancia de Situación Fiscal."}
+          >
+            <Row
+              leading={<ChannelTile channel={channel} />}
+              title={channel ? CHANNEL_META[channel].label : "Facturación manual"}
+              subtitle={parsed.routing.candidates.find((c) => c.channel === channel)?.reason ?? "No encontramos un canal automático"}
+            />
+          </Section>
+
+          {parsed.routing.warnings.map((w) => (
+            <Notice key={w} tone="warning" icon={AlertTriangle}>
+              {w}
+            </Notice>
+          ))}
+        </>
+      )}
+
+      {error && (
+        <Notice tone="error" icon={XCircle}>
+          {error}
+        </Notice>
+      )}
+
+      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+52px)] z-30 -mx-4 flex flex-col gap-3 bg-gradient-to-t from-background from-70% to-transparent px-4 pb-3 pt-8 md:bottom-0 md:-mx-6 md:px-6 md:pb-6">
+        {parsed && (
+          <Button type="submit" size="lg" disabled={sending} className="shadow-lg shadow-primary/20">
+            {sending && <Loader2 className="animate-spin" />}
+            Solicitar factura
+          </Button>
+        )}
+        {!reading && (
+          <Button type="button" size="lg" variant="gray" onClick={reset} disabled={sending}>
+            {parsed ? "Cancelar" : "Intentar con otra foto"}
+          </Button>
+        )}
+      </div>
+      {pickers}
+    </form>
   );
 }
 
+function Tip({ icon: Icon }: { icon: typeof Sun }) {
+  return (
+    <span className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-muted text-primary">
+      <Icon className="h-[18px] w-[18px]" />
+    </span>
+  );
+}
+
+function ReviewSkeleton() {
+  return (
+    <div className="space-y-1.5">
+      <div className="mx-4 h-3 w-28 animate-pulse rounded bg-muted" />
+      <div className="space-y-px overflow-hidden rounded-[var(--radius)] bg-card">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="flex h-11 items-center justify-between px-4">
+            <div className="h-3.5 w-16 animate-pulse rounded bg-muted" />
+            <div className="h-3.5 w-28 animate-pulse rounded bg-muted" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

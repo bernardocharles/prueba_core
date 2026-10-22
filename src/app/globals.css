@@ -2,46 +2,108 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Tokens con los colores de sistema de iOS (HIG): fondo agrupado, materiales,
+ * separadores y tintes. El modo oscuro sigue la preferencia del dispositivo.
+ */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --primary: 158 64% 32%;
+    --background: 240 24% 96%;        /* systemGroupedBackground #F2F2F7 */
+    --foreground: 0 0% 0%;            /* label */
+    --card: 0 0% 100%;                /* secondarySystemGroupedBackground */
+    --card-foreground: 0 0% 0%;
+    --muted: 240 6% 93%;              /* tertiarySystemFill */
+    --muted-foreground: 240 2% 56%;   /* secondaryLabel #8E8E93 */
+    --primary: 211 100% 50%;          /* systemBlue #007AFF */
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 72% 51%;
+    --secondary: 240 6% 93%;
+    --secondary-foreground: 0 0% 0%;
+    --accent: 240 6% 93%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 3 100% 59%;        /* systemRed #FF3B30 */
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 158 64% 32%;
-    --radius: 0.6rem;
+    --success: 135 59% 49%;           /* systemGreen #34C759 */
+    --warning: 35 100% 50%;           /* systemOrange #FF9500 */
+    --indigo: 241 61% 59%;            /* systemIndigo #5856D6 */
+    --teal: 199 78% 55%;
+    --border: 240 3% 85%;             /* separator */
+    --input: 240 6% 93%;
+    --ring: 211 100% 50%;
+    --material: 0 0% 100% / 0.72;     /* barras translúcidas */
+    --radius: 0.875rem;
   }
-  .dark {
-    --background: 222 47% 7%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 98%;
-    --primary: 158 55% 45%;
-    --primary-foreground: 222 47% 7%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 63% 45%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 158 55% 45%;
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: 0 0% 0%;
+      --foreground: 0 0% 100%;
+      --card: 240 3% 11%;             /* #1C1C1E */
+      --card-foreground: 0 0% 100%;
+      --muted: 240 2% 18%;            /* #2C2C2E */
+      --muted-foreground: 240 2% 60%;
+      --primary: 210 100% 52%;        /* #0A84FF */
+      --primary-foreground: 0 0% 100%;
+      --secondary: 240 2% 18%;
+      --secondary-foreground: 0 0% 100%;
+      --accent: 240 2% 18%;
+      --accent-foreground: 0 0% 100%;
+      --destructive: 3 100% 61%;
+      --success: 135 64% 50%;
+      --warning: 36 100% 52%;
+      --indigo: 241 73% 66%;
+      --teal: 197 100% 63%;
+      --border: 240 2% 22%;
+      --input: 240 2% 18%;
+      --ring: 210 100% 52%;
+      --material: 240 3% 11% / 0.72;
+    }
   }
-  * { @apply border-border; }
-  body { @apply bg-background text-foreground antialiased; }
+
+  * {
+    @apply border-border;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    font-family:
+      -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", system-ui, "Segoe UI",
+      Roboto, sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "kern", "ss01";
+    letter-spacing: -0.01em;
+  }
+
+  /* Evita el zoom automático de iOS Safari en inputs < 16px */
+  input,
+  select,
+  textarea {
+    font-size: 17px;
+  }
+}
+
+@layer utilities {
+  .material {
+    background-color: hsl(var(--material));
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .press {
+    @apply transition-[transform,opacity] duration-150 active:scale-[0.97] active:opacity-80;
+  }
 }
