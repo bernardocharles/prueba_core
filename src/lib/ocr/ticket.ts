@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { extractStructured, imageMediaType } from "../ai";
+import { CATEGORIES } from "../categories";
 import { demoTicketData, isDemoMode } from "../demo";
 
 export const CANALES = ["WEB_SCRAPE", "WHATSAPP", "EMAIL", "PAC_DIRECTO"] as const;
@@ -13,6 +14,7 @@ const TicketExtractionSchema = z.object({
   folio_ticket: z.string().nullable(),
   codigo_facturacion: z.string().nullable(),
   forma_pago: z.string().nullable(),
+  giro: z.enum(CATEGORIES).nullable(),
   canal_sugerido: z.enum(CANALES).nullable(),
   datos_contacto: z.object({
     url_portal: z.string().nullable(),
@@ -36,6 +38,7 @@ Campos:
 - datos_contacto.url_portal: sitio web para facturar (ej. "facturacion.tienda.com"); incluye https:// si falta.
 - datos_contacto.whatsapp: número de WhatsApp para facturar, sólo si el ticket lo indica explícitamente para facturación o WhatsApp.
 - datos_contacto.email: correo para solicitar factura.
+- giro: categoría del comercio, una de: ${CATEGORIES.join(", ")}.
 - canal_sugerido: WEB_SCRAPE si hay portal web de facturación, si no WHATSAPP si hay WhatsApp, si no EMAIL si hay correo, PAC_DIRECTO sólo si el ticket menciona facturación por API/PAC.
 Si un campo no es legible o no existe, usa null. Nunca inventes datos.
 Si la imagen no es un ticket de compra, es_ticket=false.`;

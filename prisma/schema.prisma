@@ -8,12 +8,15 @@ generator client {
 }
 
 model User {
-  id          String       @id @default(uuid())
-  email       String       @unique
-  name        String
-  taxProfiles TaxProfile[]
-  tickets     Ticket[]
-  createdAt   DateTime     @default(now())
+  id             String          @id @default(uuid())
+  email          String          @unique
+  name           String
+  taxProfiles    TaxProfile[]
+  tickets        Ticket[]
+  expenseImports ExpenseImport[]
+  expenses       Expense[]
+  limits         SpendingLimit[]
+  createdAt      DateTime        @default(now())
 }
 
 model TaxProfile {
@@ -53,6 +56,7 @@ model Ticket {
   vendorRfc     String?
   ticketDate    DateTime?
   totalAmount   Float?
+  category      String? // giro del comercio (ver src/lib/categories.ts)
   ticketFolio   String?
   billingCode   String?
   channelUsed   ChannelType?
@@ -63,4 +67,54 @@ model Ticket {
   invoicePdfUrl String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+}
+
+// ─── Análisis: gastos importados de Excel y límites ────────────────────
+
+/// Un archivo Excel/CSV importado; borrar el lote deshace la importación.
+model ExpenseImport {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  fileName  String
+  rowCount  Int
+  expenses  Expense[]
+  createdAt DateTime  @default(now())
+}
+
+model Expense {
+  id       String        @id @default(uuid())
+  userId   String
+  user     User          @relation(fields: [userId], references: [id])
+  importId String
+  import   ExpenseImport @relation(fields: [importId], references: [id], onDelete: Cascade)
+  date     DateTime
+  concept  String
+  vendor   String?
+  category String?
+  amount   Float
+
+  @@index([userId, date])
+}
+
+enum LimitScope {
+  TOTAL
+  CATEGORY
+  STORE
+}
+
+enum LimitPeriod {
+  MONTHLY
+  YEARLY
+}
+
+model SpendingLimit {
+  id         String      @id @default(uuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id])
+  scope      LimitScope
+  scopeValue String? // categoría o tienda; null para TOTAL
+  period     LimitPeriod
+  amount     Float
+  createdAt  DateTime    @default(now())
 }

@@ -39,6 +39,9 @@ const EXT: Record<string, string> = {
   "image/png": "png",
   "image/webp": "webp",
   "image/heic": "heic",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+  "application/vnd.ms-excel": "xls",
+  "text/csv": "csv",
 };
 
 export const CONTENT_TYPE_BY_EXT: Record<string, string> = {
@@ -50,7 +53,7 @@ export const CONTENT_TYPE_BY_EXT: Record<string, string> = {
   heic: "image/heic",
 };
 
-export type FileKind = "csf" | "tickets" | "invoices";
+export type FileKind = "csf" | "tickets" | "invoices" | "imports";
 
 export function buildKey(userId: string, kind: FileKind, contentType: string, name?: string) {
   const ext = EXT[contentType] ?? "bin";

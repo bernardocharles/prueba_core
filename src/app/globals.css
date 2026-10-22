@@ -30,6 +30,10 @@
     --input: 240 6% 93%;
     --ring: 211 100% 50%;
     --material: 0 0% 100% / 0.72;     /* barras translúcidas */
+    /* Series de gráficas (paleta validada con dataviz/validate_palette: CVD ΔE 24.7) */
+    --series-1: #2a78d6;              /* Gastos (Excel) */
+    --series-2: #eb6834;              /* Compras (tickets) */
+    --grid: 240 3% 90%;
     --radius: 0.875rem;
   }
 
@@ -56,6 +60,9 @@
       --input: 240 2% 18%;
       --ring: 210 100% 52%;
       --material: 240 3% 11% / 0.72;
+      --series-1: #3987e5;            /* CVD ΔE 26.8 sobre #1C1C1E */
+      --series-2: #d95926;
+      --grid: 240 2% 20%;
     }
   }
 

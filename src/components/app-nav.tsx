@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Camera, Receipt, UserRound } from "lucide-react";
+import { ChartColumn, Camera, Receipt, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { href: "/dashboard", label: "Facturas", icon: Receipt, match: (p: string) => p === "/dashboard" || /^\/tickets\/(?!nuevo)/.test(p) },
   { href: "/tickets/nuevo", label: "Escanear", icon: Camera, match: (p: string) => p === "/tickets/nuevo" },
+  { href: "/analisis", label: "Análisis", icon: ChartColumn, match: (p: string) => p.startsWith("/analisis") },
   { href: "/perfil", label: "Perfil", icon: UserRound, match: (p: string) => p.startsWith("/perfil") },
 ];
 
@@ -36,7 +37,7 @@ export function AppNav({ demo }: { demo: boolean }) {
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "rounded-[8px] px-4 py-1.5 text-subhead font-medium transition-all",
-                    active ? "bg-card shadow-[0_1px_3px_rgba(0,0,0,0.12)]" : "text-muted-foreground hover:text-foreground",
+                    active ? "bg-card shadow-[0_1px_3px_rgba(0,0,0,0.12)] dark:bg-[#636366]" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {label}
@@ -49,7 +50,7 @@ export function AppNav({ demo }: { demo: boolean }) {
 
       {/* iPhone / Android: barra de pestañas inferior respetando el home indicator */}
       <nav className="material pb-safe fixed inset-x-0 bottom-0 z-40 border-t md:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-3">
+        <div className="mx-auto grid max-w-md grid-cols-4">
           {TABS.map(({ href, label, icon: Icon, match }) => {
             const active = match(pathname);
             return (

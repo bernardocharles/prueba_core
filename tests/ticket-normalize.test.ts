@@ -23,6 +23,7 @@ describe("normalizeTicketData", () => {
     folio_ticket: "123",
     codigo_facturacion: null,
     forma_pago: "01",
+    giro: null,
     canal_sugerido: "WEB_SCRAPE",
     datos_contacto: { url_portal: "facturacion.oxxo.com", whatsapp: null, email: " Facturas@Tienda.MX " },
   };

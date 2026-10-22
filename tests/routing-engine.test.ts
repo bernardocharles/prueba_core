@@ -15,6 +15,7 @@ function ticket(overrides: Partial<TicketData> = {}, contact: Partial<TicketData
     folio_ticket: "TK-98765",
     codigo_facturacion: "A1B2C3D4",
     forma_pago: "04",
+    giro: null,
     canal_sugerido: null,
     datos_contacto: { url_portal: null, whatsapp: null, email: null, ...contact },
     ...overrides,

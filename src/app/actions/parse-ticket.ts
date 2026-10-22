@@ -1,6 +1,7 @@
 "use server";
 
 import { AIExtractionError } from "@/lib/ai";
+import { inferCategory } from "@/lib/categories";
 import { db } from "@/lib/db";
 import { extractTicketData, TicketValidationError, type TicketData } from "@/lib/ocr/ticket";
 import { routeTicket, toContactInfo, type RoutingDecision } from "@/lib/routing-engine";
@@ -39,6 +40,7 @@ export async function parseTicket(formData: FormData): Promise<ParseTicketResult
         totalAmount: data.monto_total,
         ticketFolio: data.folio_ticket,
         billingCode: data.codigo_facturacion,
+        category: data.giro ?? inferCategory(data.tienda_nombre),
         contactInfo: toContactInfo(data),
       },
     });

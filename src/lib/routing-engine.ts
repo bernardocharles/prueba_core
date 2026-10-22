@@ -114,6 +114,7 @@ export function ticketToRoutingInput(ticket: Ticket): TicketData {
     folio_ticket: ticket.ticketFolio,
     codigo_facturacion: ticket.billingCode,
     forma_pago: null,
+    giro: null,
     canal_sugerido: null,
     datos_contacto: {
       url_portal: contact.portalUrl ?? null,

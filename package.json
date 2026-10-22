@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:ocr": "vitest run tests/ticket-ocr.samples.test.ts",
     "services": "node scripts/dev-services.mjs",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "seed:demo": "tsx --env-file=.env scripts/seed-demo.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",
@@ -41,6 +42,7 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "twilio": "^5.3.6",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zod": "^4.1.12"
   },
   "devDependencies": {

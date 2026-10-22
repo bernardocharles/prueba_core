@@ -23,6 +23,9 @@ const config: Config = {
         warning: "hsl(var(--warning))",
         indigo: "hsl(var(--indigo))",
         teal: "hsl(var(--teal))",
+        "series-1": "var(--series-1)",
+        "series-2": "var(--series-2)",
+        grid: "hsl(var(--grid))",
       },
       fontSize: {
         // Escala tipográfica de iOS (Dynamic Type "Large")

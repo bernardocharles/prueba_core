@@ -32,3 +32,15 @@ export const ticketCorrectionsSchema = z.object({
 
 export type TicketCorrections = z.input<typeof ticketCorrectionsSchema>;
 export type TicketCorrectionsOutput = z.output<typeof ticketCorrectionsSchema>;
+
+export const limitSchema = z
+  .object({
+    scope: z.enum(["TOTAL", "CATEGORY", "STORE"]),
+    scopeValue: z.string().trim().nullable(),
+    period: z.enum(["MONTHLY", "YEARLY"]),
+    amount: z.preprocess((v) => (v === "" || v == null ? undefined : Number(v)), z.number({ error: "Monto inválido" }).positive("El límite debe ser mayor a 0")),
+  })
+  .refine((v) => v.scope === "TOTAL" || Boolean(v.scopeValue), { message: "Elige la categoría o tienda", path: ["scopeValue"] });
+
+export type LimitInput = z.input<typeof limitSchema>;
+export type LimitOutput = z.output<typeof limitSchema>;

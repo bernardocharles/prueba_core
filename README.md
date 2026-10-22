@@ -11,6 +11,10 @@ Plataforma para facturar (CFDI 4.0) cualquier ticket de compra en México con un
 5. Cuando el comercio responde con el **XML/PDF**, se asocia al ticket (incluso si llega dentro de un .zip),
    se valida que el receptor del CFDI sea el RFC del usuario y el ticket pasa a `COMPLETED`.
 6. El **dashboard** agrupa por mes, permite descargar XML/PDF y exportar un ZIP + CSV para el contador.
+7. **Análisis** (`/analisis`): importa un Excel/CSV de gastos (estado de cuenta u hoja propia), lo concilia
+   contra los tickets (monto ±1%, fecha ±3 días, nombre del comercio) y muestra cobertura de facturas,
+   gastos sin factura, gastos vs compras por mes, ranking por categoría y tienda, y límites con medidores.
+   Los filtros (año, mes, origen, categoría, tienda) viven en la URL y las gráficas también filtran al tocarlas.
 
 ## Stack
 
@@ -40,6 +44,9 @@ src/lib/
   ocr/csf.ts · ocr/ticket.ts    Prompts + esquemas de extracción
   ai.ts                         Llamada estructurada a Claude (PDF/imagen → JSON)
   routing-engine.ts             Decide WEB_SCRAPE | WHATSAPP | EMAIL | DIRECT_API
+  expense-import.ts             Lectura de Excel/CSV (SheetJS) y detección de columnas
+  reconcile.ts · analytics.ts   Conciliación gastos↔tickets e indicadores del tablero
+  categories.ts                 Categorías y su inferencia por nombre de comercio
   queue.ts                      Colas BullMQ
   invoice-request.ts            Plantilla formal del mensaje
   invoice-files.ts              Asociación/validación de XML/PDF recibidos
@@ -72,6 +79,9 @@ hace falta instalar PostgreSQL ni Docker. En desarrollo `STORAGE_DRIVER=local` g
 Con `DEMO_MODE="true"` en `.env` se puede recorrer toda la app: el OCR devuelve datos de ejemplo
 (comercios ficticios) y los agentes, en lugar de enviar, simulan que el comercio responde a los pocos
 segundos con un CFDI de prueba. La interfaz muestra una etiqueta **DEMO**. Ponlo en `"false"` para usar Claude, Resend y Twilio reales.
+
+Para poblar el tablero con datos ficticios de 10 meses: `npm run seed:demo` (sólo con `DEMO_MODE=true`;
+borra los tickets, gastos y límites del usuario demo).
 
 ### Configuración de canales
 
